@@ -28,7 +28,7 @@
 
         <main class="flex-1 overflow-y-auto bg-gray-50 p-6">
             <div class="max-w-7xl mx-auto">
-                <div class="bg-white shadow overflow-hidden sm:rounded-lg border border-gray-200">
+                <div class="bg-white shadow sm:rounded-lg border border-gray-200 overflow-x-auto">
                     <table class="min-w-full divide-y divide-gray-200">
                         <thead class="bg-gray-50">
                             <tr>
@@ -36,6 +36,9 @@
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Prix Achat (kg)</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Prix Vente (kg)</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Poids Max</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Croissance/j (g)</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Besoin Prot. (g)</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Besoin Gluc. (g)</th>
                                 <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                             </tr>
                         </thead>
@@ -46,6 +49,9 @@
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${race.prixAchatParKg} Ar</td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${race.prixVenteParKg} Ar</td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${race.poidsMax} kg</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${race.capaciteAugmentationPoids} g</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${race.besoinProteine} g</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${race.besoinGlucide} g</td>
                                     <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                         <a href="${pageContext.request.contextPath}/races/history/${race.id}" class="text-green-600 hover:text-green-900 mr-3">Historique</a>
                                         <a href="${pageContext.request.contextPath}/races/edit/${race.id}" class="text-emerald-600 hover:text-emerald-900 mr-3">Modifier</a>
@@ -55,7 +61,7 @@
                             </c:forEach>
                             <c:if test="${empty races}">
                                 <tr>
-                                    <td colspan="5" class="px-6 py-10 text-center text-sm text-gray-500">
+                                    <td colspan="8" class="px-6 py-10 text-center text-sm text-gray-500">
                                         Aucune race enregistrée.
                                     </td>
                                 </tr>

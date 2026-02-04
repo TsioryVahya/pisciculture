@@ -37,7 +37,7 @@
                                 <select name="race.id" id="race" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm">
                                     <option value="">Sélectionner une race</option>
                                     <c:forEach items="${races}" var="r">
-                                        <option value="${r.id}" ${poisson.race.id == r.id ? 'selected' : ''}>${r.nom}</option>
+                                        <option value="${r.id}" ${poisson.race != null and poisson.race.id == r.id ? 'selected' : ''}>${r.nom}</option>
                                     </c:forEach>
                                 </select>
                             </div>
@@ -47,12 +47,22 @@
                                 <input type="number" step="0.01" name="poidsInitial" id="poidsInitial" value="${poisson.poidsInitial}" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm">
                             </div>
 
-                            <div class="sm:col-span-2">
+                            <div class="sm:col-span-1">
                                 <label for="statut" class="block text-sm font-medium text-gray-700">Statut</label>
                                 <select name="statutId" id="statut" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm">
                                     <option value="">Sélectionner un statut</option>
                                     <c:forEach items="${statuts}" var="s">
-                                        <option value="${s.id}" ${poisson.currentStatut.id == s.id ? 'selected' : (poisson.id == null and s.nom == 'Vivant' ? 'selected' : '')}>${s.nom}</option>
+                                        <option value="${s.id}" ${poisson.currentStatut != null and poisson.currentStatut.id == s.id ? 'selected' : (poisson.id == null and s.nom == 'Vivant' ? 'selected' : '')}>${s.nom}</option>
+                                    </c:forEach>
+                                </select>
+                            </div>
+
+                            <div class="sm:col-span-1">
+                                <label for="etang" class="block text-sm font-medium text-gray-700">Étang</label>
+                                <select name="etangId" id="etang" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm">
+                                    <option value="">Sélectionner un étang</option>
+                                    <c:forEach items="${etangs}" var="e">
+                                        <option value="${e.id}" ${poisson.currentEtang != null and poisson.currentEtang.id == e.id ? 'selected' : ''}>Étang #${e.id}</option>
                                     </c:forEach>
                                 </select>
                             </div>

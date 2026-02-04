@@ -48,6 +48,7 @@
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${etang.surface}</td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${etang.capacite != null ? etang.capacite : 'N/A'}</td>
                                     <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                        <a href="${pageContext.request.contextPath}/etangs/affecter/${etang.id}" class="text-indigo-600 hover:text-indigo-900 mr-3">Affecter Poissons</a>
                                         <a href="${pageContext.request.contextPath}/etangs/edit/${etang.id}" class="text-emerald-600 hover:text-emerald-900 mr-3">Modifier</a>
                                         <a href="${pageContext.request.contextPath}/etangs/delete/${etang.id}" class="text-red-600 hover:text-red-900" onclick="return confirm('Êtes-vous sûr ?')">Supprimer</a>
                                     </td>

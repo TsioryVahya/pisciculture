@@ -23,6 +23,12 @@ public class Poisson {
     @Transient
     private Statut currentStatut;
 
+    @Transient
+    private Etang currentEtang;
+
+    @Transient
+    private BigDecimal currentPoids;
+
     // Getters and Setters
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
@@ -38,4 +44,10 @@ public class Poisson {
 
     public Statut getCurrentStatut() { return currentStatut; }
     public void setCurrentStatut(Statut currentStatut) { this.currentStatut = currentStatut; }
+
+    public Etang getCurrentEtang() { return currentEtang; }
+    public void setCurrentEtang(Etang currentEtang) { this.currentEtang = currentEtang; }
+
+    public BigDecimal getCurrentPoids() { return currentPoids; }
+    public void setCurrentPoids(BigDecimal currentPoids) { this.currentPoids = currentPoids; }
 }

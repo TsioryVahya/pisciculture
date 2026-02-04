@@ -1,0 +1,18 @@
+package com.pisciculture.repository;
+
+import com.pisciculture.model.EtatNutritionJour;
+import com.pisciculture.model.Poisson;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+import java.time.LocalDate;
+import java.util.List;
+import java.util.Optional;
+
+public interface EtatNutritionJourRepository extends JpaRepository<EtatNutritionJour, Long> {
+
+    Optional<EtatNutritionJour> findByPoissonAndDateJour(Poisson poisson, LocalDate dateJour);
+
+    Optional<EtatNutritionJour> findTopByPoissonOrderByDateJourDesc(Poisson poisson);
+
+    List<EtatNutritionJour> findByDateJour(LocalDate dateJour);
+}
