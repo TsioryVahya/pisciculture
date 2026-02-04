@@ -1,0 +1,86 @@
+race{
+    id
+    nom
+    prix achats (par kg)
+    prixdevente (par kg)
+    poids max
+    capacite augmentation de poids
+    besoin de proteine
+    besoin de glucide
+}
+
+typePrix{
+    id
+    nom(achat,vente)
+}
+
+tarifPoisson{
+    id
+    idRace
+    idTypeprix
+    montant
+    date
+}
+
+
+nourriture{
+    nom
+    prix achats (par kilo)
+    pourcentage apport proteine
+    pourcentage apport glucide 
+}
+
+
+
+etang{
+id
+long
+large
+capaciter
+} 
+
+etang_poisson{
+    id poissons
+    id etang
+    date
+}
+
+poissons{
+    id
+    nom
+    poids initial
+    idRace
+}
+
+poissons_statut{
+    idpoisson
+    idstatut
+}
+
+statut{
+    id
+    nom
+}
+
+
+alimentation{
+    id
+    idetang
+    dateHeure
+}
+
+alimentation_detaille{
+    id
+    idalimentation
+    idnourriture
+    quantite(kg)
+}
+
+evolution_historique{
+    idpoisson
+    poids
+    idalimentation 
+    proteineObtenue
+    glucideObtenue
+    dateHeure
+}
