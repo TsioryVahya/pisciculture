@@ -30,7 +30,7 @@
                 <div class="mb-6">
                     <h2 class="text-2xl font-bold text-gray-900">Reporting des Poissons</h2>
                     <p class="mt-1 text-sm text-gray-600">
-                        Coût initial, coût d'alimentation cumulé, revenu théorique à poids maximal et bénéfice estimé par poisson.
+                        Coût d'alimentation cumulé, revenu théorique à poids maximal et bénéfice estimé par poisson.
                     </p>
                 </div>
 
@@ -42,7 +42,6 @@
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Race</th>
                                 <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Poids Initial (kg)</th>
                                 <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Poids Atteint (kg)</th>
-                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Coût Initial (Ar)</th>
                                 <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Coût Alimentation (Ar)</th>
                                 <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Revenu Théorique (Ar)</th>
                                 <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Bénéfice (Ar)</th>
@@ -64,9 +63,6 @@
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-700">
                                         <fmt:formatNumber value="${row.poidsAtteint}" pattern="#,##0.000000" />
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-700">
-                                        <fmt:formatNumber value="${row.coutInitial}" pattern="#,##0" /> Ar
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-700">
                                         <fmt:formatNumber value="${row.coutAlimentation}" pattern="#,##0" /> Ar
@@ -92,7 +88,7 @@
                             </c:forEach>
                             <c:if test="${empty rows}">
                                 <tr>
-                                    <td colspan="8" class="px-6 py-10 text-center text-sm text-gray-500 italic">
+                                    <td colspan="7" class="px-6 py-10 text-center text-sm text-gray-500 italic">
                                         Aucun poisson n'est disponible pour le reporting.
                                     </td>
                                 </tr>

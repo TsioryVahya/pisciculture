@@ -41,7 +41,8 @@ public class ReportController {
             BigDecimal prixVenteKg = race.getPrixVenteParKg() != null ? race.getPrixVenteParKg() : BigDecimal.ZERO;
             BigDecimal poidsMax = race.getPoidsMax() != null ? race.getPoidsMax() : BigDecimal.ZERO;
 
-            BigDecimal coutInitial = poidsInitial.multiply(prixAchatKg);
+            // Le coût initial n'est plus pris en compte dans le calcul du bénéfice
+            BigDecimal coutInitial = BigDecimal.ZERO;
 
             // Chercher le jour où le poisson atteint (ou dépasse) son poidsMax
             BigDecimal poidsCible = poidsMax.compareTo(BigDecimal.ZERO) > 0 ? poidsMax : BigDecimal.ZERO;
@@ -76,10 +77,10 @@ public class ReportController {
             // Revenu théorique basé sur poidsMax (objectif)
             BigDecimal revenu = poidsMax.multiply(prixVenteKg);
 
-            // Coût total = coût initial + alimentation cumulée
-            BigDecimal coutTotal = coutInitial.add(coutAlimCumule);
+            // Coût total = uniquement l'alimentation cumulée
+            BigDecimal coutTotal = coutAlimCumule;
 
-            // Bénéfice = revenu - coût total
+            // Bénéfice = revenu - coût alimentation
             BigDecimal benefice = revenu.subtract(coutTotal);
 
             PoissonReportRow row = new PoissonReportRow();
