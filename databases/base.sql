@@ -116,8 +116,9 @@ CREATE TABLE etat_nutrition_jour (
     prot_stock DECIMAL(10, 6) DEFAULT 0,
     gluc_stock DECIMAL(10, 6) DEFAULT 0,
     cycles_complets INTEGER DEFAULT 0,
-    demi_cycle_applique BOOLEAN DEFAULT FALSE,
-    poids DECIMAL(10, 6)
+    demi_cycles INTEGER DEFAULT 0,
+    poids DECIMAL(10, 6),
+    cout_alimentation_cumule DECIMAL(15, 2) DEFAULT 0
 );
 
 
@@ -131,7 +132,7 @@ INSERT INTO statut (nom) VALUES ('Vivant'), ('Vendu'), ('Mort');
 -- Insertion de 4 races de poissons avec leurs caractéristiques
 INSERT INTO race (nom, prix_achat_par_kg, prix_vente_par_kg, poids_max, capacite_augmentation_poids, besoin_proteine, besoin_glucide) VALUES 
 ('Carpe', 1000, 10000, 4.00, 10.0, 2.0, 4.0),
-('Tilapia', 1000, 9600, 6.0, 15.0, 3.0, 5.0),
+('Tilapia', 1000, 9600, 2.5, 15.0, 3.0, 5.0),
 ('Truite', 1000, 7600, 9.0, 20.0, 4.0, 8.0),
 ('Silure', 1000, 8700, 5.00, 25.0, 5.0, 10.0);
 

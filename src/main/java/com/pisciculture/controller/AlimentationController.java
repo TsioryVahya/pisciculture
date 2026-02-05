@@ -72,6 +72,7 @@ public class AlimentationController {
 
         BigDecimal totalProteine = BigDecimal.ZERO;
         BigDecimal totalGlucide = BigDecimal.ZERO;
+        BigDecimal coutTotalAlimentation = BigDecimal.ZERO;
 
         for (int i = 0; i < nourritureIds.size(); i++) {
             Long nId = nourritureIds.get(i);
@@ -97,9 +98,13 @@ public class AlimentationController {
                 BigDecimal gluc = quantite.multiply(nourriture.getPourcentageApportGlucide())
                                          .divide(new BigDecimal("100"), 4, BigDecimal.ROUND_HALF_UP)
                                          .multiply(new BigDecimal("1000"));
-                
+
+                // Coût total de cette ligne d'alimentation (kg * prix/kg)
+                BigDecimal coutLigne = quantite.multiply(nourriture.getPrixAchatParKg());
+
                 totalProteine = totalProteine.add(prot);
                 totalGlucide = totalGlucide.add(gluc);
+                coutTotalAlimentation = coutTotalAlimentation.add(coutLigne);
             }
         }
 
@@ -145,6 +150,7 @@ public class AlimentationController {
             BigDecimal nbPoissons = new BigDecimal(validAssignments.size());
             BigDecimal protParPoisson = totalProteine.divide(nbPoissons, 4, BigDecimal.ROUND_HALF_UP);
             BigDecimal glucParPoisson = totalGlucide.divide(nbPoissons, 4, BigDecimal.ROUND_HALF_UP);
+            BigDecimal coutParPoisson = coutTotalAlimentation.divide(nbPoissons, 2, BigDecimal.ROUND_HALF_UP);
 
             for (EtangPoisson ep : validAssignments) {
                 Poisson poisson = ep.getPoisson();
@@ -163,16 +169,21 @@ public class AlimentationController {
                             e.setProtStock(BigDecimal.ZERO);
                             e.setGlucStock(BigDecimal.ZERO);
                             e.setCyclesComplets(0);
-                            e.setDemiCycleApplique(false);
+                            e.setDemiCycles(0);
+                            e.setCoutAlimentationCumule(BigDecimal.ZERO);
                             return e;
                         });
 
                 BigDecimal protStock = etat.getProtStock() != null ? etat.getProtStock() : BigDecimal.ZERO;
                 BigDecimal glucStock = etat.getGlucStock() != null ? etat.getGlucStock() : BigDecimal.ZERO;
+                BigDecimal coutAlimCumule = etat.getCoutAlimentationCumule() != null ? etat.getCoutAlimentationCumule() : BigDecimal.ZERO;
 
                 // Ajouter ce repas au stock (protParPoisson / glucParPoisson sont déjà en grammes)
                 protStock = protStock.add(protParPoisson);
                 glucStock = glucStock.add(glucParPoisson);
+
+                // Ajouter le coût de ce repas pour ce poisson
+                coutAlimCumule = coutAlimCumule.add(coutParPoisson);
 
                 BigDecimal needsProt = race.getBesoinProteine() != null ? race.getBesoinProteine() : BigDecimal.ZERO;
                 BigDecimal needsGluc = race.getBesoinGlucide() != null ? race.getBesoinGlucide() : BigDecimal.ZERO;
@@ -203,27 +214,33 @@ public class AlimentationController {
                     etat.setCyclesComplets(cyclesExistants + nbCycles);
                 }
 
-                // Demi-cycle (50%) : au plus un par jour et par poisson
-                boolean demiDejaFait = etat.getDemiCycleApplique() != null && etat.getDemiCycleApplique();
-                boolean peutFaire50 = !demiDejaFait && (
+                // Demi-cycles (50%) : autant que le stock le permet (par jour et par poisson)
+                int nbDemiCycles = 0;
+                while (
                         (needsProt.compareTo(BigDecimal.ZERO) > 0 && protStock.compareTo(needsProt) >= 0) ||
                         (needsGluc.compareTo(BigDecimal.ZERO) > 0 && glucStock.compareTo(needsGluc) >= 0)
-                );
-
-                if (peutFaire50) {
+                ) {
                     // Consommer un besoin pour ce demi-cycle
                     if (needsProt.compareTo(BigDecimal.ZERO) > 0 && protStock.compareTo(needsProt) >= 0) {
                         protStock = protStock.subtract(needsProt);
                     } else if (needsGluc.compareTo(BigDecimal.ZERO) > 0 && glucStock.compareTo(needsGluc) >= 0) {
                         glucStock = glucStock.subtract(needsGluc);
+                    } else {
+                        break;
                     }
 
-                    BigDecimal augmentation50 = cap.multiply(new BigDecimal("0.5"));
+                    nbDemiCycles++;
+                }
+
+                if (nbDemiCycles > 0) {
+                    BigDecimal augmentation50 = cap.multiply(new BigDecimal("0.5")).multiply(new BigDecimal(nbDemiCycles));
                     BigDecimal augmentationKg50 = augmentation50
                             .divide(new BigDecimal("1000"), 6, BigDecimal.ROUND_HALF_UP);
 
                     nouveauPoids = nouveauPoids.add(augmentationKg50);
-                    etat.setDemiCycleApplique(true);
+
+                    Integer demiCyclesExistants = etat.getDemiCycles() != null ? etat.getDemiCycles() : 0;
+                    etat.setDemiCycles(demiCyclesExistants + nbDemiCycles);
                 }
 
                 // Respecter le poids max de la race si défini
@@ -236,6 +253,7 @@ public class AlimentationController {
                 etat.setProtStock(protStock);
                 etat.setGlucStock(glucStock);
                 etat.setPoids(nouveauPoids);
+                etat.setCoutAlimentationCumule(coutAlimCumule);
                 etatNutritionJourRepository.save(etat);
 
             }

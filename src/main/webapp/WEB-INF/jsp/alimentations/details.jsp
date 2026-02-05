@@ -96,54 +96,46 @@
                     </table>
                 </div>
 
-                <!-- Évolutions Historiques (Poissons nourris) -->
+                <!-- État Nutrition Jour (Poissons de l'étang) -->
                 <div class="bg-white shadow overflow-hidden sm:rounded-lg border border-gray-200">
                     <div class="px-4 py-5 sm:px-6 border-b border-gray-200">
-                        <h3 class="text-lg leading-6 font-medium text-gray-900">État nutritionnel des poissons (jour de cette alimentation)</h3>
+                        <h3 class="text-lg leading-6 font-medium text-gray-900">Consommation par Poisson et Croissance (État Nutrition Jour)</h3>
                     </div>
                     <table class="min-w-full divide-y divide-gray-200">
                         <thead class="bg-gray-50">
-                             <tr>
+                            <tr>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Poisson</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Race</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Stock Protéines (g)</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Stock Glucides (g)</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cycles complets</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Demi-cycle ?</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Poids (kg)</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Poids Actuel (kg)</th>
                             </tr>
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-200">
-                            <c:forEach items="${etatsJour}" var="etat">
+                            <c:set var="found" value="false" />
+                            <c:forEach items="${etatsJour}" var="ej">
+                                <%-- On ne filtre pas par étang ici car le contrôleur ne passe pas l'étang, mais ej.poisson.currentEtang pourrait aider si disponible --%>
                                 <tr>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-indigo-600">
-                                        <a href="${pageContext.request.contextPath}/poissons/history/${etat.poisson.id}" class="hover:underline">${etat.poisson.nom}</a>
+                                        <a href="${pageContext.request.contextPath}/poissons/history/${ej.poisson.id}" class="hover:underline">${ej.poisson.nom}</a>
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${etat.poisson.race.nom}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${ej.poisson.race.nom}</td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-emerald-600 font-medium">
-                                        <fmt:formatNumber value="${etat.protStock}" pattern="#,##0.00" /> g
+                                        <fmt:formatNumber value="${ej.protStock}" pattern="#,##0.00" /> g
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-blue-600 font-medium">
-                                        <fmt:formatNumber value="${etat.glucStock}" pattern="#,##0.00" /> g
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-800">
-                                        ${etat.cyclesComplets}
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-800">
-                                        <c:choose>
-                                            <c:when test="${etat.demiCycleApplique}">Oui</c:when>
-                                            <c:otherwise>Non</c:otherwise>
-                                        </c:choose>
+                                        <fmt:formatNumber value="${ej.glucStock}" pattern="#,##0.00" /> g
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-bold">
-                                        <fmt:formatNumber value="${etat.poids}" pattern="#,##0.000000" /> kg
+                                        <fmt:formatNumber value="${ej.poids}" pattern="#,##0.000000" /> kg
                                     </td>
                                 </tr>
+                                <c:set var="found" value="true" />
                             </c:forEach>
-                            <c:if test="${empty etatsJour}">
+                            <c:if test="${not found}">
                                 <tr>
-                                    <td colspan="7" class="px-6 py-10 text-center text-sm text-gray-500">
-                                        Aucun état nutritionnel n'est disponible pour ce jour.
+                                    <td colspan="5" class="px-6 py-10 text-center text-sm text-gray-500">
+                                        Aucun état nutritionnel trouvé pour cette date.
                                     </td>
                                 </tr>
                             </c:if>
