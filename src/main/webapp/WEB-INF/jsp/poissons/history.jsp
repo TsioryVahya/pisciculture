@@ -223,53 +223,6 @@
                     </table>
                 </div>
 
-                <!-- Historique Manuel des Poids -->
-                <div class="bg-white shadow overflow-hidden sm:rounded-lg border border-gray-200 mt-6">
-                    <div class="px-4 py-5 sm:px-6 border-b border-gray-200 flex justify-between items-center">
-                        <h3 class="text-lg leading-6 font-medium text-gray-900">Historique des Pesées Manuelles</h3>
-                        
-                        <!-- Formulaire d'ajout de poids -->
-                        <form action="${pageContext.request.contextPath}/poissons/weight/save" method="POST" class="flex items-center gap-2">
-                            <input type="hidden" name="poissonId" value="${poisson.id}">
-                            <input type="date" name="dateMesure" required 
-                                   class="block rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm border p-2">
-                            <input type="number" step="0.000001" name="poids" placeholder="Poids (kg)" required 
-                                   class="block w-32 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm border p-2">
-                            <button type="submit" class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                                Enregistrer
-                            </button>
-                        </form>
-                    </div>
-                    <table class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-gray-50">
-                            <tr>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date de Mesure</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Poids (kg)</th>
-                            </tr>
-                        </thead>
-                        <tbody class="bg-white divide-y divide-gray-200">
-                            <c:forEach items="${manualWeightHistory}" var="mh">
-                                <tr>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                        <fmt:parseDate value="${mh.dateMesure.toString()}" pattern="yyyy-MM-dd" var="mDate" type="date" />
-                                        <fmt:formatDate value="${mDate}" pattern="dd/MM/yyyy" />
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-bold">
-                                        <fmt:formatNumber value="${mh.poids}" pattern="#,##0.000000" /> kg
-                                    </td>
-                                </tr>
-                            </c:forEach>
-                            <c:if test="${empty manualWeightHistory}">
-                                <tr>
-                                    <td colspan="2" class="px-6 py-10 text-center text-sm text-gray-500 italic">
-                                        Aucune pesée manuelle enregistrée.
-                                    </td>
-                                </tr>
-                            </c:if>
-                        </tbody>
-                    </table>
-                </div>
-
             </div>
         </main>
     </div>

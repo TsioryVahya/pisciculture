@@ -21,5 +21,7 @@ public interface EtatNutritionJourRepository extends JpaRepository<EtatNutrition
 
     List<EtatNutritionJour> findByPoissonOrderByDateJourDesc(Poisson poisson);
 
+    Optional<EtatNutritionJour> findTopByPoissonAndDateJourLessThanEqualOrderByDateJourDesc(Poisson poisson, LocalDate dateJour);
+
     Optional<EtatNutritionJour> findTopByPoissonAndDateJourBeforeOrderByDateJourDesc(Poisson poisson, LocalDate dateJour);
 }

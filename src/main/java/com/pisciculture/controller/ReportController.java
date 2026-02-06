@@ -1,10 +1,7 @@
 package com.pisciculture.controller;
 
-import com.pisciculture.model.EtatNutritionJour;
-import com.pisciculture.model.Poisson;
-import com.pisciculture.model.Race;
-import com.pisciculture.repository.EtatNutritionJourRepository;
-import com.pisciculture.repository.PoissonRepository;
+import com.pisciculture.model.*;
+import com.pisciculture.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -13,7 +10,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Controller
 @RequestMapping("/report")
@@ -25,81 +24,151 @@ public class ReportController {
     @Autowired
     private EtatNutritionJourRepository etatNutritionJourRepository;
 
+    @Autowired
+    private EtangRepository etangRepository;
+
+    @Autowired
+    private EtangPoissonRepository etangPoissonRepository;
+
+    @GetMapping("/etangs")
+    public String reportEtangs(Model model) {
+        List<Etang> etangs = etangRepository.findAll();
+        List<Poisson> allPoissons = poissonRepository.findAll();
+        List<EtangReportRow> rows = new ArrayList<>();
+
+        // Map pour stocker les calculs par étang
+        Map<Long, EtangReportRow> etangMap = new HashMap<>();
+        for (Etang etang : etangs) {
+            EtangReportRow row = new EtangReportRow();
+            row.setEtang(etang);
+            row.setRevenu(BigDecimal.ZERO);
+            row.setDepense(BigDecimal.ZERO);
+            row.setBenefice(BigDecimal.ZERO);
+            etangMap.put(etang.getId(), row);
+        }
+
+        // Calculer les stats pour chaque poisson et les sommer par étang
+        for (Poisson p : allPoissons) {
+            // Trouver l'étang actuel du poisson
+            Etang currentEtang = etangPoissonRepository.findTopByPoissonOrderByDateDesc(p)
+                    .map(EtangPoisson::getEtang)
+                    .orElse(null);
+
+            if (currentEtang != null && etangMap.containsKey(currentEtang.getId())) {
+                PoissonReportRow poissonStat = calculatePoissonStat(p);
+                EtangReportRow etangRow = etangMap.get(currentEtang.getId());
+                
+                etangRow.setRevenu(etangRow.getRevenu().add(poissonStat.getRevenu()));
+                etangRow.setDepense(etangRow.getDepense().add(poissonStat.getCoutAlimentation()));
+                etangRow.setBenefice(etangRow.getBenefice().add(poissonStat.getBenefice()));
+            }
+        }
+
+        model.addAttribute("etangRows", new ArrayList<>(etangMap.values()));
+        
+        // Ajouter aussi le reporting des poissons pour l'affichage en bas
+        model.addAttribute("poissonRows", calculateAllPoissonStats(allPoissons));
+        model.addAttribute("title", "Reporting par Étang");
+        
+        return "report/etangs";
+    }
+
     @GetMapping("/poissons")
     public String reportPoissons(Model model) {
         List<Poisson> poissons = poissonRepository.findAll();
+        model.addAttribute("rows", calculateAllPoissonStats(poissons));
+        model.addAttribute("title", "Reporting des Poissons");
+        return "report/poissons";
+    }
+
+    private List<PoissonReportRow> calculateAllPoissonStats(List<Poisson> poissons) {
         List<PoissonReportRow> rows = new ArrayList<>();
-
         for (Poisson p : poissons) {
-            Race race = p.getRace();
-            if (race == null) {
-                continue;
-            }
+            rows.add(calculatePoissonStat(p));
+        }
+        return rows;
+    }
 
-            BigDecimal poidsInitial = p.getPoidsInitial() != null ? p.getPoidsInitial() : BigDecimal.ZERO;
-            BigDecimal prixAchatKg = race.getPrixAchatParKg() != null ? race.getPrixAchatParKg() : BigDecimal.ZERO;
-            BigDecimal prixVenteKg = race.getPrixVenteParKg() != null ? race.getPrixVenteParKg() : BigDecimal.ZERO;
-            BigDecimal poidsMax = race.getPoidsMax() != null ? race.getPoidsMax() : BigDecimal.ZERO;
-
-            // Le coût initial n'est plus pris en compte dans le calcul du bénéfice
-            BigDecimal coutInitial = BigDecimal.ZERO;
-
-            // Chercher le jour où le poisson atteint (ou dépasse) son poidsMax
-            BigDecimal poidsCible = poidsMax.compareTo(BigDecimal.ZERO) > 0 ? poidsMax : BigDecimal.ZERO;
-            EtatNutritionJour etatCible = null;
-
-            if (poidsCible.compareTo(BigDecimal.ZERO) > 0) {
-                etatCible = etatNutritionJourRepository
-                        .findFirstByPoissonAndPoidsGreaterThanEqualOrderByDateJourAsc(p, poidsCible)
-                        .orElse(null);
-            }
-
-            // Si le poisson n'a jamais atteint poidsMax, on prend le dernier état disponible (s'il existe)
-            if (etatCible == null) {
-                etatCible = etatNutritionJourRepository
-                        .findTopByPoissonOrderByDateJourDesc(p)
-                        .orElse(null);
-            }
-
-            BigDecimal poidsAtteint;
-            BigDecimal coutAlimCumule;
-
-            if (etatCible != null) {
-                poidsAtteint = etatCible.getPoids() != null ? etatCible.getPoids() : poidsInitial;
-                coutAlimCumule = etatCible.getCoutAlimentationCumule() != null
-                        ? etatCible.getCoutAlimentationCumule()
-                        : BigDecimal.ZERO;
-            } else {
-                poidsAtteint = poidsInitial;
-                coutAlimCumule = BigDecimal.ZERO;
-            }
-
-            // Revenu théorique basé sur poidsMax (objectif)
-            BigDecimal revenu = poidsMax.multiply(prixVenteKg);
-
-            // Coût total = uniquement l'alimentation cumulée
-            BigDecimal coutTotal = coutAlimCumule;
-
-            // Bénéfice = revenu - coût alimentation
-            BigDecimal benefice = revenu.subtract(coutTotal);
-
+    private PoissonReportRow calculatePoissonStat(Poisson p) {
+        Race race = p.getRace();
+        BigDecimal poidsInitial = p.getPoidsInitial() != null ? p.getPoidsInitial() : BigDecimal.ZERO;
+        
+        if (race == null) {
             PoissonReportRow row = new PoissonReportRow();
             row.setPoisson(p);
-            row.setRace(race);
             row.setPoidsInitial(poidsInitial);
-            row.setPoidsAtteint(poidsAtteint);
-            row.setCoutInitial(coutInitial);
-            row.setCoutAlimentation(coutAlimCumule);
-            row.setRevenu(revenu);
-            row.setBenefice(benefice);
-
-            rows.add(row);
+            row.setPoidsAtteint(poidsInitial);
+            row.setCoutInitial(BigDecimal.ZERO);
+            row.setCoutAlimentation(BigDecimal.ZERO);
+            row.setRevenu(BigDecimal.ZERO);
+            row.setBenefice(BigDecimal.ZERO);
+            return row;
         }
 
-        model.addAttribute("rows", rows);
-        model.addAttribute("title", "Reporting des Poissons");
+        BigDecimal prixVenteKg = race.getPrixVenteParKg() != null ? race.getPrixVenteParKg() : BigDecimal.ZERO;
+        BigDecimal poidsMax = race.getPoidsMax() != null ? race.getPoidsMax() : BigDecimal.ZERO;
 
-        return "report/poissons";
+        // Chercher le jour où le poisson atteint (ou dépasse) son poidsMax
+        BigDecimal poidsCible = poidsMax.compareTo(BigDecimal.ZERO) > 0 ? poidsMax : BigDecimal.ZERO;
+        EtatNutritionJour etatCible = null;
+
+        if (poidsCible.compareTo(BigDecimal.ZERO) > 0) {
+            etatCible = etatNutritionJourRepository
+                    .findFirstByPoissonAndPoidsGreaterThanEqualOrderByDateJourAsc(p, poidsCible)
+                    .orElse(null);
+        }
+
+        if (etatCible == null) {
+            etatCible = etatNutritionJourRepository
+                    .findTopByPoissonOrderByDateJourDesc(p)
+                    .orElse(null);
+        }
+
+        BigDecimal poidsAtteint;
+        BigDecimal coutAlimCumule;
+
+        if (etatCible != null) {
+            poidsAtteint = etatCible.getPoids() != null ? etatCible.getPoids() : poidsInitial;
+            coutAlimCumule = etatCible.getCoutAlimentationCumule() != null
+                    ? etatCible.getCoutAlimentationCumule()
+                    : BigDecimal.ZERO;
+        } else {
+            poidsAtteint = poidsInitial;
+            coutAlimCumule = BigDecimal.ZERO;
+        }
+
+        BigDecimal revenu = poidsMax.multiply(prixVenteKg);
+        BigDecimal benefice = revenu.subtract(coutAlimCumule);
+
+        PoissonReportRow row = new PoissonReportRow();
+        row.setPoisson(p);
+        row.setRace(race);
+        row.setPoidsInitial(poidsInitial);
+        row.setPoidsAtteint(poidsAtteint);
+        row.setCoutInitial(BigDecimal.ZERO);
+        row.setCoutAlimentation(coutAlimCumule);
+        row.setRevenu(revenu);
+        row.setBenefice(benefice);
+        return row;
+    }
+
+    public static class EtangReportRow {
+        private Etang etang;
+        private BigDecimal revenu;
+        private BigDecimal depense;
+        private BigDecimal benefice;
+
+        public Etang getEtang() { return etang; }
+        public void setEtang(Etang etang) { this.etang = etang; }
+
+        public BigDecimal getRevenu() { return revenu; }
+        public void setRevenu(BigDecimal revenu) { this.revenu = revenu; }
+
+        public BigDecimal getDepense() { return depense; }
+        public void setDepense(BigDecimal depense) { this.depense = depense; }
+
+        public BigDecimal getBenefice() { return benefice; }
+        public void setBenefice(BigDecimal benefice) { this.benefice = benefice; }
     }
 
     public static class PoissonReportRow {

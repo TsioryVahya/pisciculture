@@ -167,7 +167,7 @@ public class PoissonController {
         // Récupérer l'historique de l'évolution du poids depuis etat_nutrition_jour
         List<EtatNutritionJour> evolutionHistory;
         if (searchDate != null) {
-            evolutionHistory = etatNutritionJourRepository.findByPoissonAndDateJour(poisson, searchDate)
+            evolutionHistory = etatNutritionJourRepository.findTopByPoissonAndDateJourLessThanEqualOrderByDateJourDesc(poisson, searchDate)
                     .map(List::of)
                     .orElse(List.of());
             model.addAttribute("searchDate", searchDate);
@@ -175,9 +175,6 @@ public class PoissonController {
             evolutionHistory = etatNutritionJourRepository.findByPoissonOrderByDateJourDesc(poisson);
         }
         model.addAttribute("evolutionHistory", evolutionHistory);
-        
-        // Ajouter le nouvel historique de poids manuel
-        model.addAttribute("manualWeightHistory", historiquePoidsRepository.findByPoissonOrderByDateMesureDesc(poisson));
         
         model.addAttribute("title", "Historique du Poisson : " + poisson.getNom());
         
