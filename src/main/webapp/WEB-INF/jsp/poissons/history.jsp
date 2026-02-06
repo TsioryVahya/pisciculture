@@ -155,62 +155,114 @@
 
                 <!-- Historique d'Évolution -->
                 <div class="bg-white shadow overflow-hidden sm:rounded-lg border border-gray-200">
-                    <div class="px-4 py-5 sm:px-6 border-b border-gray-200">
-                        <h3 class="text-lg leading-6 font-medium text-gray-900">Évolution et Apports Nutritionnels</h3>
+                    <div class="px-4 py-5 sm:px-6 border-b border-gray-200 flex flex-col sm:flex-row justify-between items-center gap-4">
+                        <h3 class="text-lg leading-6 font-medium text-gray-900">Évolution du Poids et Stocks Nutritionnels</h3>
+                        
+                        <!-- Formulaire de Recherche par Date -->
+                        <form action="${pageContext.request.contextPath}/poissons/history/${poisson.id}" method="get" class="flex items-center gap-2">
+                            <label for="searchDate" class="sr-only">Chercher par date</label>
+                            <input type="date" name="searchDate" id="searchDate" value="${searchDate}" 
+                                   class="block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 sm:text-sm border p-2">
+                            <button type="submit" class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md shadow-sm text-white bg-emerald-600 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500">
+                                <svg class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                </svg>
+                                Chercher
+                            </button>
+                            <c:if test="${not empty searchDate}">
+                                <a href="${pageContext.request.contextPath}/poissons/history/${poisson.id}" 
+                                   class="inline-flex items-center px-3 py-2 border border-gray-300 text-sm leading-4 font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500">
+                                    Réinitialiser
+                                </a>
+                            </c:if>
+                        </form>
                     </div>
                     <table class="min-w-full divide-y divide-gray-200">
                         <thead class="bg-gray-50">
                             <tr>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Poids (kg)</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Prot. Dist. (g)</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Gluc. Dist. (g)</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reste Prot. (g)</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reste Gluc. (g)</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Prot. à comp. (g)</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Gluc. à comp. (g)</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Alimentation Réf.</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Poids Atteint (kg)</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Stock Protéines (g)</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Stock Glucides (g)</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cycles</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Coût Alim. Cumulé</th>
                             </tr>
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-200">
                             <c:forEach items="${evolutionHistory}" var="ev">
                                 <tr>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                        <fmt:parseDate value="${ev.dateHeure.toString().substring(0,16)}" pattern="yyyy-MM-dd'T'HH:mm" var="parsedDate" type="both" />
-                                        <fmt:formatDate value="${parsedDate}" pattern="dd/MM/yyyy HH:mm" />
+                                        <fmt:parseDate value="${ev.dateJour.toString()}" pattern="yyyy-MM-dd" var="parsedDate" type="date" />
+                                        <fmt:formatDate value="${parsedDate}" pattern="dd/MM/yyyy" />
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-bold">
                                         <fmt:formatNumber value="${ev.poids}" pattern="#,##0.000000" /> kg
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-emerald-600">
-                                        <fmt:formatNumber value="${ev.proteineObtenue}" pattern="#,##0.00" /> g
+                                        <fmt:formatNumber value="${ev.protStock}" pattern="#,##0.00" /> g
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-blue-600">
-                                        <fmt:formatNumber value="${ev.glucideObtenue}" pattern="#,##0.00" /> g
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-emerald-800 italic">
-                                        <fmt:formatNumber value="${ev.resteProteine}" pattern="#,##0.00" /> g
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-blue-800 italic">
-                                        <fmt:formatNumber value="${ev.resteGlucide}" pattern="#,##0.00" /> g
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-red-600 font-medium">
-                                        <fmt:formatNumber value="${ev.proteineACompleter}" pattern="#,##0.00" /> g
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-orange-600 font-medium">
-                                        <fmt:formatNumber value="${ev.glucideACompleter}" pattern="#,##0.00" /> g
+                                        <fmt:formatNumber value="${ev.glucStock}" pattern="#,##0.00" /> g
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                        <c:if test="${not empty ev.alimentation}">
-                                            Saisie #${ev.alimentation.id}
-                                        </c:if>
+                                        ${ev.cyclesComplets} j / ${ev.demiCycles} ½j
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-emerald-800 font-medium">
+                                        <fmt:formatNumber value="${ev.coutAlimentationCumule}" pattern="#,##0.00" /> Ar
                                     </td>
                                 </tr>
                             </c:forEach>
                             <c:if test="${empty evolutionHistory}">
                                 <tr>
-                                    <td colspan="5" class="px-6 py-10 text-center text-sm text-gray-500">
-                                        Aucune donnée d'évolution enregistrée.
+                                    <td colspan="6" class="px-6 py-10 text-center text-sm text-gray-500 italic">
+                                        Aucun historique de poids enregistré pour ce poisson.
+                                    </td>
+                                </tr>
+                            </c:if>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Historique Manuel des Poids -->
+                <div class="bg-white shadow overflow-hidden sm:rounded-lg border border-gray-200 mt-6">
+                    <div class="px-4 py-5 sm:px-6 border-b border-gray-200 flex justify-between items-center">
+                        <h3 class="text-lg leading-6 font-medium text-gray-900">Historique des Pesées Manuelles</h3>
+                        
+                        <!-- Formulaire d'ajout de poids -->
+                        <form action="${pageContext.request.contextPath}/poissons/weight/save" method="POST" class="flex items-center gap-2">
+                            <input type="hidden" name="poissonId" value="${poisson.id}">
+                            <input type="date" name="dateMesure" required 
+                                   class="block rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm border p-2">
+                            <input type="number" step="0.000001" name="poids" placeholder="Poids (kg)" required 
+                                   class="block w-32 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm border p-2">
+                            <button type="submit" class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                                Enregistrer
+                            </button>
+                        </form>
+                    </div>
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date de Mesure</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Poids (kg)</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            <c:forEach items="${manualWeightHistory}" var="mh">
+                                <tr>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                        <fmt:parseDate value="${mh.dateMesure.toString()}" pattern="yyyy-MM-dd" var="mDate" type="date" />
+                                        <fmt:formatDate value="${mDate}" pattern="dd/MM/yyyy" />
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-bold">
+                                        <fmt:formatNumber value="${mh.poids}" pattern="#,##0.000000" /> kg
+                                    </td>
+                                </tr>
+                            </c:forEach>
+                            <c:if test="${empty manualWeightHistory}">
+                                <tr>
+                                    <td colspan="2" class="px-6 py-10 text-center text-sm text-gray-500 italic">
+                                        Aucune pesée manuelle enregistrée.
                                     </td>
                                 </tr>
                             </c:if>

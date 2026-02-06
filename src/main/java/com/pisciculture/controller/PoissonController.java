@@ -3,10 +3,13 @@ package com.pisciculture.controller;
 import com.pisciculture.model.*;
 import com.pisciculture.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
 
 @Controller
@@ -33,6 +36,9 @@ public class PoissonController {
 
     @Autowired
     private EtatNutritionJourRepository etatNutritionJourRepository;
+
+    @Autowired
+    private HistoriquePoidsRepository historiquePoidsRepository;
 
     @GetMapping
     public String list(Model model) {
@@ -134,7 +140,9 @@ public class PoissonController {
     }
 
     @GetMapping("/history/{id}")
-    public String history(@PathVariable Long id, Model model) {
+    public String history(@PathVariable Long id, 
+                         @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate searchDate,
+                         Model model) {
         Poisson poisson = poissonRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Invalid poisson Id:" + id));
 
@@ -155,10 +163,37 @@ public class PoissonController {
         model.addAttribute("poisson", poisson);
         model.addAttribute("statutHistory", poissonStatutRepository.findByPoissonOrderByDateChangementDesc(poisson));
         model.addAttribute("etangHistory", etangPoissonRepository.findByPoissonOrderByDateDesc(poisson));
-        // Plus d'historique d'évolution détaillée : liste vide
-        model.addAttribute("evolutionHistory", java.util.Collections.emptyList());
+        
+        // Récupérer l'historique de l'évolution du poids depuis etat_nutrition_jour
+        List<EtatNutritionJour> evolutionHistory;
+        if (searchDate != null) {
+            evolutionHistory = etatNutritionJourRepository.findByPoissonAndDateJour(poisson, searchDate)
+                    .map(List::of)
+                    .orElse(List.of());
+            model.addAttribute("searchDate", searchDate);
+        } else {
+            evolutionHistory = etatNutritionJourRepository.findByPoissonOrderByDateJourDesc(poisson);
+        }
+        model.addAttribute("evolutionHistory", evolutionHistory);
+        
+        // Ajouter le nouvel historique de poids manuel
+        model.addAttribute("manualWeightHistory", historiquePoidsRepository.findByPoissonOrderByDateMesureDesc(poisson));
+        
         model.addAttribute("title", "Historique du Poisson : " + poisson.getNom());
         
         return "poissons/history";
+    }
+
+    @PostMapping("/weight/save")
+    public String saveWeight(@RequestParam("poissonId") Long poissonId,
+                            @RequestParam("dateMesure") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateMesure,
+                            @RequestParam("poids") BigDecimal poids) {
+        Poisson poisson = poissonRepository.findById(poissonId)
+                .orElseThrow(() -> new IllegalArgumentException("Invalid poisson Id:" + poissonId));
+        
+        HistoriquePoids hp = new HistoriquePoids(poisson, dateMesure, poids);
+        historiquePoidsRepository.save(hp);
+        
+        return "redirect:/poissons/history/" + poissonId;
     }
 }

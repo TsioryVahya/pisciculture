@@ -25,15 +25,24 @@
                 <div class="bg-white shadow sm:rounded-lg p-6 border border-gray-200">
                     <form action="${pageContext.request.contextPath}/alimentations/save" method="POST">
                         <div class="space-y-6">
-                            <!-- Étang Selection -->
-                            <div>
-                                <label for="etangId" class="block text-sm font-medium text-gray-700">Sélectionner l'Étang</label>
-                                <select id="etangId" name="etangId" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm">
-                                    <option value="">-- Choisir un étang --</option>
-                                    <c:forEach items="${etangs}" var="e">
-                                        <option value="${e.id}">Étang #${e.id} (Surface: ${e.surface} m²)</option>
-                                    </c:forEach>
-                                </select>
+                            <div class="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-2">
+                                <!-- Étang Selection -->
+                                <div>
+                                    <label for="etangId" class="block text-sm font-medium text-gray-700">Sélectionner l'Étang</label>
+                                    <select id="etangId" name="etangId" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm">
+                                        <option value="">-- Choisir un étang --</option>
+                                        <c:forEach items="${etangs}" var="e">
+                                            <option value="${e.id}">Étang #${e.id} (Surface: ${e.surface} m²)</option>
+                                        </c:forEach>
+                                    </select>
+                                </div>
+
+                                <!-- Date Selection -->
+                                <div>
+                                    <label for="dateAlimentation" class="block text-sm font-medium text-gray-700">Date et Heure</label>
+                                    <input type="datetime-local" id="dateAlimentation" name="dateAlimentation" required 
+                                           class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm">
+                                </div>
                             </div>
 
                             <!-- Nourriture List -->
@@ -90,6 +99,11 @@
     </div>
 
     <script>
+        // Set default date and time to now
+        const now = new Date();
+        now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+        document.getElementById('dateAlimentation').value = now.toISOString().slice(0, 16);
+
         document.getElementById('addRow').addEventListener('click', function() {
             const container = document.getElementById('nourritureRows');
             const firstRow = container.querySelector('.nourriture-row');

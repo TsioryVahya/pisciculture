@@ -18,4 +18,8 @@ public interface EtatNutritionJourRepository extends JpaRepository<EtatNutrition
 
     // Premier jour où le poisson atteint (ou dépasse) un certain poids
     Optional<EtatNutritionJour> findFirstByPoissonAndPoidsGreaterThanEqualOrderByDateJourAsc(Poisson poisson, java.math.BigDecimal poidsCible);
+
+    List<EtatNutritionJour> findByPoissonOrderByDateJourDesc(Poisson poisson);
+
+    Optional<EtatNutritionJour> findTopByPoissonAndDateJourBeforeOrderByDateJourDesc(Poisson poisson, LocalDate dateJour);
 }

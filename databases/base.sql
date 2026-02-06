@@ -1,5 +1,7 @@
 -- Script de création de la base de données Pisciculture (PostgreSQL)
 -- Table d'état nutritionnel journalier par poisson
+
+DROP TABLE IF EXISTS historique_poids CASCADE;
 DROP TABLE IF EXISTS etat_nutrition_jour CASCADE;
 
 DROP TABLE IF EXISTS alimentation_detaille CASCADE;
@@ -177,3 +179,11 @@ INSERT INTO etang_poisson (id_poisson, id_etang) VALUES
 (2, 1),
 (3, 2),
 (4, 2);
+
+-- Table pour stocker l'historique de l'évolution du poids des poissons
+CREATE TABLE historique_poids (
+    id BIGSERIAL PRIMARY KEY,
+    id_poisson BIGINT REFERENCES poissons(id),
+    date_mesure DATE NOT NULL,
+    poids DECIMAL(10, 6) NOT NULL
+);

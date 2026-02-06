@@ -8,6 +8,7 @@ import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Sort;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -77,6 +78,7 @@ public class AlimentationController {
 
     @PostMapping("/save")
     public String save(@RequestParam("etangId") Long etangId,
+                      @RequestParam("dateAlimentation") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime dateAlimentation,
                       @RequestParam("nourritureIds") List<Long> nourritureIds,
                       @RequestParam("quantites") List<BigDecimal> quantites) {
         
@@ -85,7 +87,7 @@ public class AlimentationController {
 
         Alimentation alimentation = new Alimentation();
         alimentation.setEtang(etang);
-        alimentation.setDateHeure(LocalDateTime.now());
+        alimentation.setDateHeure(dateAlimentation);
         
         Alimentation savedAlimentation = alimentationRepository.save(alimentation);
 
@@ -138,26 +140,14 @@ public class AlimentationController {
             // Vérifier affectation actuelle : l'ID de l'EtangPoisson passé doit être le plus récent pour ce poisson
             Optional<EtangPoisson> lastAssignment = etangPoissonRepository.findTopByPoissonOrderByDateDesc(poisson);
             
-            // Log pour debug
-            System.out.println("Checking poisson: " + poisson.getNom());
-            if (lastAssignment.isPresent()) {
-                System.out.println("Last assignment ID: " + lastAssignment.get().getId() + " (Etang ID: " + lastAssignment.get().getEtang().getId() + ")");
-                System.out.println("Current EP ID: " + ep.getId() + " (Etang ID: " + ep.getEtang().getId() + ")");
-            }
-
             if (!lastAssignment.isPresent() || !lastAssignment.get().getId().equals(ep.getId())) {
-                System.out.println("Skipping: Not the last assignment");
                 continue;
             }
             
             // Vérifier statut Vivant
             Optional<PoissonStatut> lastStatut = poissonStatutRepository.findTopByPoissonOrderByDateChangementDesc(poisson);
-            if (lastStatut.isPresent()) {
-                System.out.println("Status: " + lastStatut.get().getStatut().getNom());
-            }
 
             if (!lastStatut.isPresent() || !lastStatut.get().getStatut().getNom().equalsIgnoreCase("Vivant")) {
-                System.out.println("Skipping: Not living");
                 continue;
             }
             
@@ -176,15 +166,15 @@ public class AlimentationController {
                 Race race = poisson.getRace();
 
                 // État nutritionnel du jour pour ce poisson
-                LocalDate today = LocalDate.now();
+                LocalDate feedingDate = dateAlimentation.toLocalDate();
                 EtatNutritionJour etat = etatNutritionJourRepository
-                        .findByPoissonAndDateJour(poisson, today)
+                        .findByPoissonAndDateJour(poisson, feedingDate)
                         .orElseGet(() -> {
                             EtatNutritionJour e = new EtatNutritionJour();
                             e.setPoisson(poisson);
-                            e.setDateJour(today);
+                            e.setDateJour(feedingDate);
                             
-                            // Récupérer le dernier poids connu (soit d'un jour précédent, soit le poids initial)
+                            // Récupérer le dernier poids connu AVANT ou à la date de feedingDate
                             BigDecimal dernierPoids = etatNutritionJourRepository
                                     .findTopByPoissonOrderByDateJourDesc(poisson)
                                     .map(EtatNutritionJour::getPoids)
@@ -196,6 +186,11 @@ public class AlimentationController {
                             e.setCyclesComplets(0);
                             e.setDemiCycles(0);
                             e.setCoutAlimentationCumule(BigDecimal.ZERO);
+                            
+                            // On initialise le coût cumulé à partir du dernier état s'il existe
+                            etatNutritionJourRepository.findTopByPoissonAndDateJourBeforeOrderByDateJourDesc(poisson, feedingDate)
+                                .ifPresent(prev -> e.setCoutAlimentationCumule(prev.getCoutAlimentationCumule()));
+                                
                             return e;
                         });
 
