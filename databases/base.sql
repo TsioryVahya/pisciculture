@@ -158,15 +158,22 @@ INSERT INTO nourriture (nom, prix_achat_par_kg, pourcentage_apport_proteine, pou
 -- Insertion de données de test pour les poissons
 INSERT INTO poissons (nom, poids_initial, idRace) VALUES 
 ('Poisson 1', 0.200, 2),    -- Tilapia
-('Poisson 2', 0.150, 2); -- Tilapia
+('Poisson 2', 0.150, 2),
+('Poisson 3', 0.250, 2), -- Tilapia
+('Poisson 4', 0.100, 2); -- Tilapia
+ -- Tilapia
 
 
 -- Insertion des statuts initiaux pour les poissons (idstatut 1 = Vivant)
 INSERT INTO poissons_statut (idpoisson, idstatut) VALUES 
 (1, 1),
-(2, 1);
+(2, 1),
+(3, 1),
+(4, 1);
 
 -- Affectation des poissons aux étangs (id_etang 1)
 INSERT INTO etang_poisson (id_poisson, id_etang) VALUES 
 (1, 1),
-(2, 1);
+(2, 1),
+(3, 2),
+(4, 2);
