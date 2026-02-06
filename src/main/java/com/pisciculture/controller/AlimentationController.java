@@ -1,18 +1,37 @@
 package com.pisciculture.controller;
 
-import com.pisciculture.model.*;
-import com.pisciculture.repository.*;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Sort;
-import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.*;
-
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Sort;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+
+import com.pisciculture.model.Alimentation;
+import com.pisciculture.model.AlimentationDetaille;
+import com.pisciculture.model.Etang;
+import com.pisciculture.model.EtangPoisson;
+import com.pisciculture.model.EtatNutritionJour;
+import com.pisciculture.model.Nourriture;
+import com.pisciculture.model.Poisson;
+import com.pisciculture.model.PoissonStatut;
+import com.pisciculture.model.Race;
+import com.pisciculture.repository.AlimentationDetailleRepository;
+import com.pisciculture.repository.AlimentationRepository;
+import com.pisciculture.repository.EtangPoissonRepository;
+import com.pisciculture.repository.EtangRepository;
+import com.pisciculture.repository.EtatNutritionJourRepository;
+import com.pisciculture.repository.NourritureRepository;
+import com.pisciculture.repository.PoissonStatutRepository;
 
 @Controller
 @RequestMapping("/alimentations")
@@ -164,8 +183,14 @@ public class AlimentationController {
                             EtatNutritionJour e = new EtatNutritionJour();
                             e.setPoisson(poisson);
                             e.setDateJour(today);
-                            // Poids de départ : poids initial du poisson
-                            e.setPoids(poisson.getPoidsInitial());
+                            
+                            // Récupérer le dernier poids connu (soit d'un jour précédent, soit le poids initial)
+                            BigDecimal dernierPoids = etatNutritionJourRepository
+                                    .findTopByPoissonOrderByDateJourDesc(poisson)
+                                    .map(EtatNutritionJour::getPoids)
+                                    .orElse(poisson.getPoidsInitial());
+                                    
+                            e.setPoids(dernierPoids);
                             e.setProtStock(BigDecimal.ZERO);
                             e.setGlucStock(BigDecimal.ZERO);
                             e.setCyclesComplets(0);
@@ -275,13 +300,24 @@ public class AlimentationController {
 
         List<AlimentationDetaille> details = alimentationDetailleRepository.findByAlimentation(alimentation);
 
-        // Récupérer l'état nutritionnel journalier des poissons pour le jour de cette alimentation
+        // Récupérer l'état nutritionnel journalier des poissons de cet étang pour le jour de cette alimentation
         java.time.LocalDate jour = alimentation.getDateHeure().toLocalDate();
-        List<EtatNutritionJour> etatsJour = etatNutritionJourRepository.findByDateJour(jour);
+        List<EtatNutritionJour> allEtatsJour = etatNutritionJourRepository.findByDateJour(jour);
+        
+        // Filtrer pour ne garder que les poissons qui étaient dans cet étang AU MOMENT de l'alimentation
+        // ou plus simplement, qui sont actuellement assignés à cet étang.
+        List<EtatNutritionJour> filteredEtats = new java.util.ArrayList<>();
+        for (EtatNutritionJour ej : allEtatsJour) {
+            Poisson p = ej.getPoisson();
+            Optional<EtangPoisson> lastAssignment = etangPoissonRepository.findTopByPoissonOrderByDateDesc(p);
+            if (lastAssignment.isPresent() && lastAssignment.get().getEtang().getId().equals(alimentation.getEtang().getId())) {
+                filteredEtats.add(ej);
+            }
+        }
 
         model.addAttribute("alimentation", alimentation);
         model.addAttribute("details", details);
-        model.addAttribute("etatsJour", etatsJour);
+        model.addAttribute("etatsJour", filteredEtats);
         model.addAttribute("title", "Détails de l'Alimentation #" + id);
         
         return "alimentations/details";
