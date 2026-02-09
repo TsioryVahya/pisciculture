@@ -298,10 +298,16 @@ public class AlimentationController {
                     etat.setCyclesComplets(cyclesExistants + nbCycles);
                 }
 
-                // Demi-cycles (50%) : un par un tant qu'un nutriment au moins est disponible en quantité suffisante
+                // Demi-cycles (Règle du tiers de poids par nutriment satisfait)
                 int nbDemiCycles = 0;
                 boolean canDoMoreDemiCycles = true;
-                while (canDoMoreDemiCycles) {
+                
+                // On compte le nombre total de nutriments dont la race a besoin
+                long totalNutrimentsRequis = besoinsRace != null ? besoinsRace.stream()
+                        .filter(rn -> rn.getBesoinNutriment().compareTo(BigDecimal.ZERO) > 0)
+                        .count() : 0;
+
+                while (canDoMoreDemiCycles && totalNutrimentsRequis > 0) {
                     canDoMoreDemiCycles = false;
                     if (besoinsRace != null) {
                         for (RaceNutriment rn : besoinsRace) {
@@ -310,7 +316,7 @@ public class AlimentationController {
                             BigDecimal stock = stocksNutriments.getOrDefault(nutrimentId, BigDecimal.ZERO);
                             
                             if (besoin.compareTo(BigDecimal.ZERO) > 0 && stock.compareTo(besoin) >= 0) {
-                                // Consommer
+                                // Consommer le nutriment
                                 BigDecimal newStock = stock.subtract(besoin);
                                 stocksNutriments.put(nutrimentId, newStock);
                                 
@@ -320,21 +326,23 @@ public class AlimentationController {
                                         poissonNutrimentStockRepository.save(s);
                                     });
                                 
+                                // Calcul de l'augmentation : (1 / totalNutrimentsRequis) de la capacité
+                                BigDecimal fraction = BigDecimal.ONE.divide(new BigDecimal(totalNutrimentsRequis), 6, BigDecimal.ROUND_HALF_UP);
+                                BigDecimal augmentationG = cap.multiply(fraction);
+                                BigDecimal augmentationKg = augmentationG.divide(new BigDecimal("1000"), 6, BigDecimal.ROUND_HALF_UP);
+                                
+                                nouveauPoids = nouveauPoids.add(augmentationKg);
                                 nbDemiCycles++;
                                 canDoMoreDemiCycles = true;
-                                break; // On ne fait qu'un demi-cycle à la fois
+                                
+                                // On ne fait qu'une consommation à la fois dans la boucle while pour réévaluer
+                                break; 
                             }
                         }
                     }
                 }
 
                 if (nbDemiCycles > 0) {
-                    BigDecimal augmentation50 = cap.multiply(new BigDecimal("0.5")).multiply(new BigDecimal(nbDemiCycles));
-                    BigDecimal augmentationKg50 = augmentation50
-                            .divide(new BigDecimal("1000"), 6, BigDecimal.ROUND_HALF_UP);
-
-                    nouveauPoids = nouveauPoids.add(augmentationKg50);
-
                     Integer demiCyclesExistants = etat.getDemiCycles() != null ? etat.getDemiCycles() : 0;
                     etat.setDemiCycles(demiCyclesExistants + nbDemiCycles);
                 }
