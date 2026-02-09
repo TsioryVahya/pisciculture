@@ -2,6 +2,7 @@
 -- Table d'état nutritionnel journalier par poisson
 
 DROP TABLE IF EXISTS historique_poids CASCADE;
+DROP TABLE IF EXISTS poisson_nutriment_stock CASCADE;
 DROP TABLE IF EXISTS nutriments_nourritures CASCADE;
 DROP TABLE IF EXISTS nutriments_races CASCADE;
 DROP TABLE IF EXISTS nutriments CASCADE;
