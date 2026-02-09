@@ -2,6 +2,7 @@ package com.pisciculture.model;
 
 import jakarta.persistence.*;
 import java.math.BigDecimal;
+import java.util.List;
 
 @Entity
 @Table(name = "race")
@@ -26,11 +27,8 @@ public class Race {
     @Column(name = "capacite_augmentation_poids")
     private BigDecimal capaciteAugmentationPoids; // en grammes par jour
 
-    @Column(name = "besoin_proteine")
-    private BigDecimal besoinProteine; // en grammes
-
-    @Column(name = "besoin_glucide")
-    private BigDecimal besoinGlucide; // en grammes
+    @OneToMany(mappedBy = "race", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<RaceNutriment> nutriments;
 
     // Getters and Setters
     public Long getId() { return id; }
@@ -51,9 +49,6 @@ public class Race {
     public BigDecimal getCapaciteAugmentationPoids() { return capaciteAugmentationPoids; }
     public void setCapaciteAugmentationPoids(BigDecimal capaciteAugmentationPoids) { this.capaciteAugmentationPoids = capaciteAugmentationPoids; }
 
-    public BigDecimal getBesoinProteine() { return besoinProteine; }
-    public void setBesoinProteine(BigDecimal besoinProteine) { this.besoinProteine = besoinProteine; }
-
-    public BigDecimal getBesoinGlucide() { return besoinGlucide; }
-    public void setBesoinGlucide(BigDecimal besoinGlucide) { this.besoinGlucide = besoinGlucide; }
+    public List<RaceNutriment> getNutriments() { return nutriments; }
+    public void setNutriments(List<RaceNutriment> nutriments) { this.nutriments = nutriments; }
 }

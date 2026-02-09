@@ -33,8 +33,7 @@
                             <tr>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nom</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Prix Achat (kg)</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Protéines (%)</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Glucides (%)</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Apports Nutritionnels</th>
                                 <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                             </tr>
                         </thead>
@@ -43,8 +42,18 @@
                                 <tr>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${n.nom}</td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${n.prixAchatParKg} Ar</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${n.pourcentageApportProteine}%</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${n.pourcentageApportGlucide}%</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                        <div class="flex flex-wrap gap-1">
+                                            <c:forEach items="${n.nutriments}" var="nn">
+                                                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-emerald-100 text-emerald-800">
+                                                    ${nn.nutriment.nom}: ${nn.pourcentageApportNutriment}%
+                                                </span>
+                                            </c:forEach>
+                                            <c:if test="${empty n.nutriments}">
+                                                <span class="text-xs text-gray-400 italic">Aucun</span>
+                                            </c:if>
+                                        </div>
+                                    </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                         <a href="${pageContext.request.contextPath}/nourritures/edit/${n.id}" class="text-emerald-600 hover:text-emerald-900 mr-3">Modifier</a>
                                         <a href="${pageContext.request.contextPath}/nourritures/delete/${n.id}" class="text-red-600 hover:text-red-900" onclick="return confirm('Êtes-vous sûr ?')">Supprimer</a>

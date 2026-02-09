@@ -106,25 +106,29 @@
                             <tr>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Poisson</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Race</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Stock Protéines (g)</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Stock Glucides (g)</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Stocks Nutritionnels (g)</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Poids Actuel (kg)</th>
                             </tr>
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-200">
                             <c:set var="found" value="false" />
                             <c:forEach items="${etatsJour}" var="ej">
-                                <%-- On ne filtre pas par étang ici car le contrôleur ne passe pas l'étang, mais ej.poisson.currentEtang pourrait aider si disponible --%>
                                 <tr>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-indigo-600">
                                         <a href="${pageContext.request.contextPath}/poissons/history/${ej.poisson.id}" class="hover:underline">${ej.poisson.nom}</a>
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${ej.poisson.race.nom}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-emerald-600 font-medium">
-                                        <fmt:formatNumber value="${ej.protStock}" pattern="#,##0.00" /> g
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-blue-600 font-medium">
-                                        <fmt:formatNumber value="${ej.glucStock}" pattern="#,##0.00" /> g
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                        <div class="flex flex-wrap gap-1">
+                                            <c:forEach items="${stocksParEtat[ej.id]}" var="s">
+                                                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-emerald-100 text-emerald-800">
+                                                    ${s.nutriment.nom}: <fmt:formatNumber value="${s.stock}" pattern="#,##0.00" /> g
+                                                </span>
+                                            </c:forEach>
+                                            <c:if test="${empty stocksParEtat[ej.id]}">
+                                                <span class="text-xs text-gray-400 italic">Aucun stock</span>
+                                            </c:if>
+                                        </div>
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-bold">
                                         <fmt:formatNumber value="${ej.poids}" pattern="#,##0.000000" /> kg

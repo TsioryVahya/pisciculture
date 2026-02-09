@@ -52,14 +52,20 @@
                                 <input type="number" step="0.01" name="capaciteAugmentationPoids" id="capaciteAugmentationPoids" value="${race.capaciteAugmentationPoids}" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm">
                             </div>
 
-                            <div>
-                                <label for="besoinProteine" class="block text-sm font-medium text-gray-700">Besoin en protéines (g)</label>
-                                <input type="number" step="0.01" name="besoinProteine" id="besoinProteine" value="${race.besoinProteine}" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm">
-                            </div>
+                        </div>
 
-                            <div>
-                                <label for="besoinGlucide" class="block text-sm font-medium text-gray-700">Besoin en glucides (g)</label>
-                                <input type="number" step="0.01" name="besoinGlucide" id="besoinGlucide" value="${race.besoinGlucide}" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm">
+                        <!-- Nutriments Modulables -->
+                        <div class="border-t border-gray-200 pt-6">
+                            <h3 class="text-lg font-medium text-gray-900 mb-4">Besoins Nutritionnels Modulables</h3>
+                            <div class="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-2">
+                                <c:forEach items="${nutriments}" var="n">
+                                    <div>
+                                        <label for="nutriment_${n.id}" class="block text-sm font-medium text-gray-700">Besoin en ${n.nom} (g)</label>
+                                        <input type="number" step="0.01" name="nutriment_${n.id}" id="nutriment_${n.id}" 
+                                               value="${nutrientValues[n.id]}" 
+                                               class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm">
+                                    </div>
+                                </c:forEach>
                             </div>
                         </div>
 

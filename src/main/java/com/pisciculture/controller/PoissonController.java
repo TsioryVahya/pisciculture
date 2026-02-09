@@ -38,6 +38,9 @@ public class PoissonController {
     private EtatNutritionJourRepository etatNutritionJourRepository;
 
     @Autowired
+    private PoissonNutrimentStockRepository poissonNutrimentStockRepository;
+
+    @Autowired
     private HistoriquePoidsRepository historiquePoidsRepository;
 
     @GetMapping
@@ -175,6 +178,13 @@ public class PoissonController {
             evolutionHistory = etatNutritionJourRepository.findByPoissonOrderByDateJourDesc(poisson);
         }
         model.addAttribute("evolutionHistory", evolutionHistory);
+
+        // Pour chaque jour de l'historique, récupérer les stocks de nutriments
+        java.util.Map<Long, List<PoissonNutrimentStock>> stocksParJour = new java.util.HashMap<>();
+        for (EtatNutritionJour ev : evolutionHistory) {
+            stocksParJour.put(ev.getId(), poissonNutrimentStockRepository.findByPoissonAndDateJour(poisson, ev.getDateJour()));
+        }
+        model.addAttribute("stocksParJour", stocksParJour);
         
         model.addAttribute("title", "Historique du Poisson : " + poisson.getNom());
         

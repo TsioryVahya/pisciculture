@@ -37,8 +37,7 @@
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Prix Vente (kg)</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Poids Max</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Croissance/j (g)</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Besoin Prot. (g)</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Besoin Gluc. (g)</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Besoins Nutritionnels</th>
                                 <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                             </tr>
                         </thead>
@@ -50,8 +49,18 @@
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${race.prixVenteParKg} Ar</td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${race.poidsMax} kg</td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${race.capaciteAugmentationPoids} g</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${race.besoinProteine} g</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${race.besoinGlucide} g</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                        <div class="flex flex-wrap gap-1">
+                                            <c:forEach items="${race.nutriments}" var="rn">
+                                                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
+                                                    ${rn.nutriment.nom}: ${rn.besoinNutriment}g
+                                                </span>
+                                            </c:forEach>
+                                            <c:if test="${empty race.nutriments}">
+                                                <span class="text-xs text-gray-400 italic">Aucun</span>
+                                            </c:if>
+                                        </div>
+                                    </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                         <a href="${pageContext.request.contextPath}/races/history/${race.id}" class="text-green-600 hover:text-green-900 mr-3">Historique</a>
                                         <a href="${pageContext.request.contextPath}/races/edit/${race.id}" class="text-emerald-600 hover:text-emerald-900 mr-3">Modifier</a>

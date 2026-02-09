@@ -37,14 +37,20 @@
                                 <input type="number" step="0.01" name="prixAchatParKg" id="prixAchatParKg" value="${nourriture.prixAchatParKg}" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm">
                             </div>
 
-                            <div>
-                                <label for="pourcentageApportProteine" class="block text-sm font-medium text-gray-700">Apport en protéines (%)</label>
-                                <input type="number" step="0.01" name="pourcentageApportProteine" id="pourcentageApportProteine" value="${nourriture.pourcentageApportProteine}" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm">
-                            </div>
+                        </div>
 
-                            <div>
-                                <label for="pourcentageApportGlucide" class="block text-sm font-medium text-gray-700">Apport en glucides (%)</label>
-                                <input type="number" step="0.01" name="pourcentageApportGlucide" id="pourcentageApportGlucide" value="${nourriture.pourcentageApportGlucide}" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm">
+                        <!-- Nutriments Modulables -->
+                        <div class="border-t border-gray-200 pt-6">
+                            <h3 class="text-lg font-medium text-gray-900 mb-4">Apports Nutritionnels Modulables</h3>
+                            <div class="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-2">
+                                <c:forEach items="${nutriments}" var="n">
+                                    <div>
+                                        <label for="nutriment_${n.id}" class="block text-sm font-medium text-gray-700">Apport en ${n.nom} (%)</label>
+                                        <input type="number" step="0.01" name="nutriment_${n.id}" id="nutriment_${n.id}" 
+                                               value="${nutrientValues[n.id]}" 
+                                               class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm">
+                                    </div>
+                                </c:forEach>
                             </div>
                         </div>
 

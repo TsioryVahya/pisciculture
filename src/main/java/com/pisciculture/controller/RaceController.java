@@ -1,18 +1,18 @@
 package com.pisciculture.controller;
 
-import com.pisciculture.model.Race;
-import com.pisciculture.model.TarifPoisson;
-import com.pisciculture.model.TypePrix;
-import com.pisciculture.repository.RaceRepository;
-import com.pisciculture.repository.TarifPoissonRepository;
-import com.pisciculture.repository.TypePrixRepository;
+import com.pisciculture.model.*;
+import com.pisciculture.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Controller
 @RequestMapping("/races")
@@ -27,6 +27,12 @@ public class RaceController {
     @Autowired
     private TypePrixRepository typePrixRepository;
 
+    @Autowired
+    private NutrimentRepository nutrimentRepository;
+
+    @Autowired
+    private RaceNutrimentRepository raceNutrimentRepository;
+
     @GetMapping
     public String list(Model model) {
         List<Race> races = raceRepository.findAll();
@@ -38,13 +44,14 @@ public class RaceController {
     @GetMapping("/new")
     public String createForm(Model model) {
         model.addAttribute("race", new Race());
+        model.addAttribute("nutriments", nutrimentRepository.findAll());
         model.addAttribute("title", "Nouvelle Race");
         return "races/form";
     }
 
     @PostMapping("/save")
     @Transactional
-    public String save(@ModelAttribute Race race) {
+    public String save(@ModelAttribute Race race, @RequestParam Map<String, String> allParams) {
         boolean isNew = race.getId() == null;
         Race oldRace = null;
         if (!isNew) {
@@ -83,6 +90,20 @@ public class RaceController {
             tarifPoissonRepository.save(tarif);
         }
 
+        // Gestion des nutriments modulables
+        raceNutrimentRepository.deleteByRace(savedRace);
+        List<Nutriment> allNutriments = nutrimentRepository.findAll();
+        for (Nutriment n : allNutriments) {
+            String val = allParams.get("nutriment_" + n.getId());
+            if (val != null && !val.isEmpty()) {
+                RaceNutriment rn = new RaceNutriment();
+                rn.setRace(savedRace);
+                rn.setNutriment(n);
+                rn.setBesoinNutriment(new BigDecimal(val));
+                raceNutrimentRepository.save(rn);
+            }
+        }
+
         return "redirect:/races";
     }
 
@@ -99,7 +120,13 @@ public class RaceController {
     @GetMapping("/edit/{id}")
     public String editForm(@PathVariable Long id, Model model) {
         Race race = raceRepository.findById(id).orElseThrow(() -> new IllegalArgumentException("Invalid race Id:" + id));
+        List<RaceNutriment> currentNutriments = raceNutrimentRepository.findByRace(race);
+        Map<Long, BigDecimal> nutrientValues = currentNutriments.stream()
+                .collect(Collectors.toMap(rn -> rn.getNutriment().getId(), RaceNutriment::getBesoinNutriment));
+        
         model.addAttribute("race", race);
+        model.addAttribute("nutriments", nutrimentRepository.findAll());
+        model.addAttribute("nutrientValues", nutrientValues);
         model.addAttribute("title", "Modifier la Race");
         return "races/form";
     }

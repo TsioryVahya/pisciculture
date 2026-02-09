@@ -23,15 +23,21 @@ import com.pisciculture.model.Etang;
 import com.pisciculture.model.EtangPoisson;
 import com.pisciculture.model.EtatNutritionJour;
 import com.pisciculture.model.Nourriture;
+import com.pisciculture.model.NourritureNutriment;
+import com.pisciculture.model.Nutriment;
 import com.pisciculture.model.Poisson;
+import com.pisciculture.model.PoissonNutrimentStock;
 import com.pisciculture.model.PoissonStatut;
 import com.pisciculture.model.Race;
+import com.pisciculture.model.RaceNutriment;
 import com.pisciculture.repository.AlimentationDetailleRepository;
 import com.pisciculture.repository.AlimentationRepository;
 import com.pisciculture.repository.EtangPoissonRepository;
 import com.pisciculture.repository.EtangRepository;
 import com.pisciculture.repository.EtatNutritionJourRepository;
 import com.pisciculture.repository.NourritureRepository;
+import com.pisciculture.repository.NutrimentRepository;
+import com.pisciculture.repository.PoissonNutrimentStockRepository;
 import com.pisciculture.repository.PoissonStatutRepository;
 
 @Controller
@@ -59,6 +65,12 @@ public class AlimentationController {
 
     @Autowired
     private EtatNutritionJourRepository etatNutritionJourRepository;
+
+    @Autowired
+    private NutrimentRepository nutrimentRepository;
+
+    @Autowired
+    private PoissonNutrimentStockRepository poissonNutrimentStockRepository;
 
     @GetMapping
     public String list(Model model) {
@@ -91,8 +103,8 @@ public class AlimentationController {
         
         Alimentation savedAlimentation = alimentationRepository.save(alimentation);
 
-        BigDecimal totalProteine = BigDecimal.ZERO;
-        BigDecimal totalGlucide = BigDecimal.ZERO;
+        // Map pour stocker les apports totaux par nutriment pour cet étang
+        java.util.Map<Long, BigDecimal> apportsNutrimentsEtang = new java.util.HashMap<>();
         BigDecimal coutTotalAlimentation = BigDecimal.ZERO;
 
         for (int i = 0; i < nourritureIds.size(); i++) {
@@ -111,20 +123,24 @@ public class AlimentationController {
                 
                 alimentationDetailleRepository.save(detail);
 
-                // Calcul des nutriments totaux (quantité en kg * pourcentage / 100 * 1000 pour avoir en grammes)
-                // Correction : Le pourcentage est déjà une valeur entre 0 et 100 (ex: 0.20 pour 0.20%)
-                BigDecimal prot = quantite.multiply(nourriture.getPourcentageApportProteine())
-                                         .divide(new BigDecimal("100"), 4, BigDecimal.ROUND_HALF_UP)
-                                         .multiply(new BigDecimal("1000"));
-                BigDecimal gluc = quantite.multiply(nourriture.getPourcentageApportGlucide())
-                                         .divide(new BigDecimal("100"), 4, BigDecimal.ROUND_HALF_UP)
-                                         .multiply(new BigDecimal("1000"));
+                // Calcul des nutriments apportés par cette nourriture
+                if (nourriture.getNutriments() != null) {
+                    for (NourritureNutriment nn : nourriture.getNutriments()) {
+                        Nutriment nutriment = nn.getNutriment();
+                        BigDecimal pourcentage = nn.getPourcentageApportNutriment();
+                        
+                        // Quantité en grammes : kg * pourcentage / 100 * 1000
+                        BigDecimal apportG = quantite.multiply(pourcentage)
+                                                     .divide(new BigDecimal("100"), 6, BigDecimal.ROUND_HALF_UP)
+                                                     .multiply(new BigDecimal("1000"));
+                        
+                        apportsNutrimentsEtang.put(nutriment.getId(), 
+                            apportsNutrimentsEtang.getOrDefault(nutriment.getId(), BigDecimal.ZERO).add(apportG));
+                    }
+                }
 
                 // Coût total de cette ligne d'alimentation (kg * prix/kg)
                 BigDecimal coutLigne = quantite.multiply(nourriture.getPrixAchatParKg());
-
-                totalProteine = totalProteine.add(prot);
-                totalGlucide = totalGlucide.add(gluc);
                 coutTotalAlimentation = coutTotalAlimentation.add(coutLigne);
             }
         }
@@ -157,9 +173,13 @@ public class AlimentationController {
         if (!validAssignments.isEmpty()) {
             // Calculer la part par poisson (division équitable)
             BigDecimal nbPoissons = new BigDecimal(validAssignments.size());
-            BigDecimal protParPoisson = totalProteine.divide(nbPoissons, 4, BigDecimal.ROUND_HALF_UP);
-            BigDecimal glucParPoisson = totalGlucide.divide(nbPoissons, 4, BigDecimal.ROUND_HALF_UP);
             BigDecimal coutParPoisson = coutTotalAlimentation.divide(nbPoissons, 2, BigDecimal.ROUND_HALF_UP);
+            
+            // Apports par nutriment par poisson
+            java.util.Map<Long, BigDecimal> apportsNutrimentsParPoisson = new java.util.HashMap<>();
+            for (java.util.Map.Entry<Long, BigDecimal> entry : apportsNutrimentsEtang.entrySet()) {
+                apportsNutrimentsParPoisson.put(entry.getKey(), entry.getValue().divide(nbPoissons, 6, BigDecimal.ROUND_HALF_UP));
+            }
 
             for (EtangPoisson ep : validAssignments) {
                 Poisson poisson = ep.getPoisson();
@@ -181,8 +201,6 @@ public class AlimentationController {
                                     .orElse(poisson.getPoidsInitial());
                                     
                             e.setPoids(dernierPoids);
-                            e.setProtStock(BigDecimal.ZERO);
-                            e.setGlucStock(BigDecimal.ZERO);
                             e.setCyclesComplets(0);
                             e.setDemiCycles(0);
                             e.setCoutAlimentationCumule(BigDecimal.ZERO);
@@ -194,36 +212,82 @@ public class AlimentationController {
                             return e;
                         });
 
-                BigDecimal protStock = etat.getProtStock() != null ? etat.getProtStock() : BigDecimal.ZERO;
-                BigDecimal glucStock = etat.getGlucStock() != null ? etat.getGlucStock() : BigDecimal.ZERO;
                 BigDecimal coutAlimCumule = etat.getCoutAlimentationCumule() != null ? etat.getCoutAlimentationCumule() : BigDecimal.ZERO;
-
-                // Ajouter ce repas au stock (protParPoisson / glucParPoisson sont déjà en grammes)
-                protStock = protStock.add(protParPoisson);
-                glucStock = glucStock.add(glucParPoisson);
-
-                // Ajouter le coût de ce repas pour ce poisson
                 coutAlimCumule = coutAlimCumule.add(coutParPoisson);
 
-                BigDecimal needsProt = race.getBesoinProteine() != null ? race.getBesoinProteine() : BigDecimal.ZERO;
-                BigDecimal needsGluc = race.getBesoinGlucide() != null ? race.getBesoinGlucide() : BigDecimal.ZERO;
+                // Gérer les stocks de nutriments dynamiques
+                List<Nutriment> allNutriments = nutrimentRepository.findAll();
+                java.util.Map<Long, BigDecimal> stocksNutriments = new java.util.HashMap<>();
+                
+                for (Nutriment n : allNutriments) {
+                    PoissonNutrimentStock stockEntry = poissonNutrimentStockRepository
+                        .findByPoissonAndNutrimentAndDateJour(poisson, n, feedingDate)
+                        .orElseGet(() -> {
+                            PoissonNutrimentStock ns = new PoissonNutrimentStock();
+                            ns.setPoisson(poisson);
+                            ns.setNutriment(n);
+                            ns.setDateJour(feedingDate);
+                            
+                            // Récupérer le stock de la veille
+                            BigDecimal lastStock = poissonNutrimentStockRepository
+                                .findTopByPoissonAndNutrimentOrderByDateJourDesc(poisson, n)
+                                .map(PoissonNutrimentStock::getStock)
+                                .orElse(BigDecimal.ZERO);
+                            ns.setStock(lastStock);
+                            return ns;
+                        });
+                    
+                    BigDecimal currentStock = stockEntry.getStock();
+                    BigDecimal apport = apportsNutrimentsParPoisson.getOrDefault(n.getId(), BigDecimal.ZERO);
+                    currentStock = currentStock.add(apport);
+                    
+                    stockEntry.setStock(currentStock);
+                    stocksNutriments.put(n.getId(), currentStock);
+                    poissonNutrimentStockRepository.save(stockEntry);
+                }
+
+                // Besoins de la race
+                List<RaceNutriment> besoinsRace = race.getNutriments();
                 BigDecimal cap = race.getCapaciteAugmentationPoids() != null ? race.getCapaciteAugmentationPoids() : BigDecimal.ZERO;
 
-                // Calcul des cycles complets (100%) possibles avec le stock actuel
-                int nbCyclesProt = BigDecimal.ZERO.compareTo(needsProt) < 0
-                        ? protStock.divideToIntegralValue(needsProt).intValue()
-                        : 0;
-                int nbCyclesGluc = BigDecimal.ZERO.compareTo(needsGluc) < 0
-                        ? glucStock.divideToIntegralValue(needsGluc).intValue()
-                        : 0;
-                int nbCycles = Math.min(nbCyclesProt, nbCyclesGluc);
+                // Calcul du nombre de cycles complets possibles (le minimum parmi tous les nutriments requis)
+                int nbCycles = -1;
+                if (besoinsRace != null && !besoinsRace.isEmpty()) {
+                    for (RaceNutriment rn : besoinsRace) {
+                        BigDecimal besoin = rn.getBesoinNutriment();
+                        if (besoin.compareTo(BigDecimal.ZERO) > 0) {
+                            BigDecimal stock = stocksNutriments.getOrDefault(rn.getNutriment().getId(), BigDecimal.ZERO);
+                            int cyclesPossible = stock.divideToIntegralValue(besoin).intValue();
+                            if (nbCycles == -1 || cyclesPossible < nbCycles) {
+                                nbCycles = cyclesPossible;
+                            }
+                        }
+                    }
+                } else {
+                    nbCycles = 0;
+                }
+                
+                if (nbCycles < 0) nbCycles = 0;
 
                 BigDecimal nouveauPoids = etat.getPoids() != null ? etat.getPoids() : poisson.getPoidsInitial();
 
                 if (nbCycles > 0) {
                     // Consommer les besoins pour ces cycles
-                    protStock = protStock.subtract(needsProt.multiply(new BigDecimal(nbCycles)));
-                    glucStock = glucStock.subtract(needsGluc.multiply(new BigDecimal(nbCycles)));
+                    for (RaceNutriment rn : besoinsRace) {
+                        BigDecimal besoinTotal = rn.getBesoinNutriment().multiply(new BigDecimal(nbCycles));
+                        Long nutrimentId = rn.getNutriment().getId();
+                        BigDecimal currentStock = stocksNutriments.get(nutrimentId);
+                        BigDecimal newStock = currentStock.subtract(besoinTotal);
+                        
+                        stocksNutriments.put(nutrimentId, newStock);
+                        
+                        // Mettre à jour en base
+                        poissonNutrimentStockRepository.findByPoissonAndNutrimentAndDateJour(poisson, rn.getNutriment(), feedingDate)
+                            .ifPresent(s -> {
+                                s.setStock(newStock);
+                                poissonNutrimentStockRepository.save(s);
+                            });
+                    }
 
                     BigDecimal augmentation100 = cap.multiply(new BigDecimal(nbCycles)); // en g
                     BigDecimal augmentationKg = augmentation100
@@ -234,22 +298,34 @@ public class AlimentationController {
                     etat.setCyclesComplets(cyclesExistants + nbCycles);
                 }
 
-                // Demi-cycles (50%) : autant que le stock le permet (par jour et par poisson)
+                // Demi-cycles (50%) : un par un tant qu'un nutriment au moins est disponible en quantité suffisante
                 int nbDemiCycles = 0;
-                while (
-                        (needsProt.compareTo(BigDecimal.ZERO) > 0 && protStock.compareTo(needsProt) >= 0) ||
-                        (needsGluc.compareTo(BigDecimal.ZERO) > 0 && glucStock.compareTo(needsGluc) >= 0)
-                ) {
-                    // Consommer un besoin pour ce demi-cycle
-                    if (needsProt.compareTo(BigDecimal.ZERO) > 0 && protStock.compareTo(needsProt) >= 0) {
-                        protStock = protStock.subtract(needsProt);
-                    } else if (needsGluc.compareTo(BigDecimal.ZERO) > 0 && glucStock.compareTo(needsGluc) >= 0) {
-                        glucStock = glucStock.subtract(needsGluc);
-                    } else {
-                        break;
+                boolean canDoMoreDemiCycles = true;
+                while (canDoMoreDemiCycles) {
+                    canDoMoreDemiCycles = false;
+                    if (besoinsRace != null) {
+                        for (RaceNutriment rn : besoinsRace) {
+                            BigDecimal besoin = rn.getBesoinNutriment();
+                            Long nutrimentId = rn.getNutriment().getId();
+                            BigDecimal stock = stocksNutriments.getOrDefault(nutrimentId, BigDecimal.ZERO);
+                            
+                            if (besoin.compareTo(BigDecimal.ZERO) > 0 && stock.compareTo(besoin) >= 0) {
+                                // Consommer
+                                BigDecimal newStock = stock.subtract(besoin);
+                                stocksNutriments.put(nutrimentId, newStock);
+                                
+                                poissonNutrimentStockRepository.findByPoissonAndNutrimentAndDateJour(poisson, rn.getNutriment(), feedingDate)
+                                    .ifPresent(s -> {
+                                        s.setStock(newStock);
+                                        poissonNutrimentStockRepository.save(s);
+                                    });
+                                
+                                nbDemiCycles++;
+                                canDoMoreDemiCycles = true;
+                                break; // On ne fait qu'un demi-cycle à la fois
+                            }
+                        }
                     }
-
-                    nbDemiCycles++;
                 }
 
                 if (nbDemiCycles > 0) {
@@ -270,8 +346,6 @@ public class AlimentationController {
                 }
 
                 // Mettre à jour l'état journalier
-                etat.setProtStock(protStock);
-                etat.setGlucStock(glucStock);
                 etat.setPoids(nouveauPoids);
                 etat.setCoutAlimentationCumule(coutAlimCumule);
                 etatNutritionJourRepository.save(etat);
@@ -300,7 +374,6 @@ public class AlimentationController {
         List<EtatNutritionJour> allEtatsJour = etatNutritionJourRepository.findByDateJour(jour);
         
         // Filtrer pour ne garder que les poissons qui étaient dans cet étang AU MOMENT de l'alimentation
-        // ou plus simplement, qui sont actuellement assignés à cet étang.
         List<EtatNutritionJour> filteredEtats = new java.util.ArrayList<>();
         for (EtatNutritionJour ej : allEtatsJour) {
             Poisson p = ej.getPoisson();
@@ -310,9 +383,16 @@ public class AlimentationController {
             }
         }
 
+        // Pour chaque état, récupérer ses stocks de nutriments
+        java.util.Map<Long, List<PoissonNutrimentStock>> stocksParEtat = new java.util.HashMap<>();
+        for (EtatNutritionJour ej : filteredEtats) {
+            stocksParEtat.put(ej.getId(), poissonNutrimentStockRepository.findByPoissonAndDateJour(ej.getPoisson(), jour));
+        }
+
         model.addAttribute("alimentation", alimentation);
         model.addAttribute("details", details);
         model.addAttribute("etatsJour", filteredEtats);
+        model.addAttribute("stocksParEtat", stocksParEtat);
         model.addAttribute("title", "Détails de l'Alimentation #" + id);
         
         return "alimentations/details";

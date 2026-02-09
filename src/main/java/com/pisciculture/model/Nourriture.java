@@ -2,6 +2,7 @@ package com.pisciculture.model;
 
 import jakarta.persistence.*;
 import java.math.BigDecimal;
+import java.util.List;
 
 @Entity
 @Table(name = "nourriture")
@@ -17,11 +18,8 @@ public class Nourriture {
     @Column(name = "prix_achat_par_kg")
     private BigDecimal prixAchatParKg;
 
-    @Column(name = "pourcentage_apport_proteine")
-    private BigDecimal pourcentageApportProteine;
-
-    @Column(name = "pourcentage_apport_glucide")
-    private BigDecimal pourcentageApportGlucide;
+    @OneToMany(mappedBy = "nourriture", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<NourritureNutriment> nutriments;
 
     // Getters and Setters
     public Long getId() { return id; }
@@ -33,9 +31,6 @@ public class Nourriture {
     public BigDecimal getPrixAchatParKg() { return prixAchatParKg; }
     public void setPrixAchatParKg(BigDecimal prixAchatParKg) { this.prixAchatParKg = prixAchatParKg; }
 
-    public BigDecimal getPourcentageApportProteine() { return pourcentageApportProteine; }
-    public void setPourcentageApportProteine(BigDecimal pourcentageApportProteine) { this.pourcentageApportProteine = pourcentageApportProteine; }
-
-    public BigDecimal getPourcentageApportGlucide() { return pourcentageApportGlucide; }
-    public void setPourcentageApportGlucide(BigDecimal pourcentageApportGlucide) { this.pourcentageApportGlucide = pourcentageApportGlucide; }
+    public List<NourritureNutriment> getNutriments() { return nutriments; }
+    public void setNutriments(List<NourritureNutriment> nutriments) { this.nutriments = nutriments; }
 }

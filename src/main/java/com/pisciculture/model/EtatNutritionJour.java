@@ -19,12 +19,6 @@ public class EtatNutritionJour {
     @Column(name = "date_jour")
     private LocalDate dateJour;
 
-    @Column(name = "prot_stock")
-    private BigDecimal protStock = BigDecimal.ZERO;
-
-    @Column(name = "gluc_stock")
-    private BigDecimal glucStock = BigDecimal.ZERO;
-
     @Column(name = "cycles_complets")
     private Integer cyclesComplets = 0;
 
@@ -45,12 +39,6 @@ public class EtatNutritionJour {
 
     public LocalDate getDateJour() { return dateJour; }
     public void setDateJour(LocalDate dateJour) { this.dateJour = dateJour; }
-
-    public BigDecimal getProtStock() { return protStock; }
-    public void setProtStock(BigDecimal protStock) { this.protStock = protStock; }
-
-    public BigDecimal getGlucStock() { return glucStock; }
-    public void setGlucStock(BigDecimal glucStock) { this.glucStock = glucStock; }
 
     public Integer getCyclesComplets() { return cyclesComplets; }
     public void setCyclesComplets(Integer cyclesComplets) { this.cyclesComplets = cyclesComplets; }

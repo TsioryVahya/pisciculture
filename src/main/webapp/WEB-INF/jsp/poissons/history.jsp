@@ -95,8 +95,14 @@
                                 <p class="text-sm font-medium text-gray-900">${poisson.race.poidsMax} kg</p>
                             </div>
                             <div>
-                                <p class="text-xs text-gray-500 uppercase">Besoin Protéines</p>
-                                <p class="text-sm font-medium text-gray-900">${poisson.race.besoinProteine} g</p>
+                                <p class="text-xs text-gray-500 uppercase">Besoins Nutritionnels</p>
+                                <div class="flex flex-wrap gap-1 mt-1">
+                                    <c:forEach items="${poisson.race.nutriments}" var="rn">
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-emerald-100 text-emerald-800">
+                                            ${rn.nutriment.nom}: ${rn.besoinNutriment} g
+                                        </span>
+                                    </c:forEach>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -182,8 +188,7 @@
                             <tr>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Poids Atteint (kg)</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Stock Protéines (g)</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Stock Glucides (g)</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Stocks Nutritionnels (g)</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cycles</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Coût Alim. Cumulé</th>
                             </tr>
@@ -198,11 +203,17 @@
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-bold">
                                         <fmt:formatNumber value="${ev.poids}" pattern="#,##0.000000" /> kg
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-emerald-600">
-                                        <fmt:formatNumber value="${ev.protStock}" pattern="#,##0.00" /> g
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-blue-600">
-                                        <fmt:formatNumber value="${ev.glucStock}" pattern="#,##0.00" /> g
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                        <div class="flex flex-wrap gap-1">
+                                            <c:forEach items="${stocksParJour[ev.id]}" var="s">
+                                                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-emerald-100 text-emerald-800">
+                                                    ${s.nutriment.nom}: <fmt:formatNumber value="${s.stock}" pattern="#,##0.00" /> g
+                                                </span>
+                                            </c:forEach>
+                                            <c:if test="${empty stocksParJour[ev.id]}">
+                                                <span class="text-xs text-gray-400 italic">Aucun stock</span>
+                                            </c:if>
+                                        </div>
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                         ${ev.cyclesComplets} j / ${ev.demiCycles} ½j

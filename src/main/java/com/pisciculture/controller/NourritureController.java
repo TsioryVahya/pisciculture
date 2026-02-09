@@ -1,11 +1,17 @@
 package com.pisciculture.controller;
 
-import com.pisciculture.model.Nourriture;
-import com.pisciculture.repository.NourritureRepository;
+import com.pisciculture.model.*;
+import com.pisciculture.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.math.BigDecimal;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Controller
 @RequestMapping("/nourritures")
@@ -13,6 +19,12 @@ public class NourritureController {
 
     @Autowired
     private NourritureRepository nourritureRepository;
+
+    @Autowired
+    private NutrimentRepository nutrimentRepository;
+
+    @Autowired
+    private NourritureNutrimentRepository nourritureNutrimentRepository;
 
     @GetMapping
     public String list(Model model) {
@@ -24,6 +36,7 @@ public class NourritureController {
     @GetMapping("/new")
     public String createForm(Model model) {
         model.addAttribute("nourriture", new Nourriture());
+        model.addAttribute("nutriments", nutrimentRepository.findAll());
         model.addAttribute("title", "Nouvelle Nourriture");
         return "nourritures/form";
     }
@@ -31,14 +44,36 @@ public class NourritureController {
     @GetMapping("/edit/{id}")
     public String editForm(@PathVariable Long id, Model model) {
         Nourriture nourriture = nourritureRepository.findById(id).orElseThrow(() -> new IllegalArgumentException("Invalid nourriture Id:" + id));
+        List<NourritureNutriment> currentNutriments = nourritureNutrimentRepository.findByNourriture(nourriture);
+        Map<Long, BigDecimal> nutrientValues = currentNutriments.stream()
+                .collect(Collectors.toMap(nn -> nn.getNutriment().getId(), NourritureNutriment::getPourcentageApportNutriment));
+
         model.addAttribute("nourriture", nourriture);
+        model.addAttribute("nutriments", nutrimentRepository.findAll());
+        model.addAttribute("nutrientValues", nutrientValues);
         model.addAttribute("title", "Modifier la Nourriture");
         return "nourritures/form";
     }
 
     @PostMapping("/save")
-    public String save(@ModelAttribute Nourriture nourriture) {
-        nourritureRepository.save(nourriture);
+    @Transactional
+    public String save(@ModelAttribute Nourriture nourriture, @RequestParam Map<String, String> allParams) {
+        Nourriture savedNourriture = nourritureRepository.save(nourriture);
+
+        // Gestion des nutriments modulables
+        nourritureNutrimentRepository.deleteByNourriture(savedNourriture);
+        List<Nutriment> allNutriments = nutrimentRepository.findAll();
+        for (Nutriment n : allNutriments) {
+            String val = allParams.get("nutriment_" + n.getId());
+            if (val != null && !val.isEmpty()) {
+                NourritureNutriment nn = new NourritureNutriment();
+                nn.setNourriture(savedNourriture);
+                nn.setNutriment(n);
+                nn.setPourcentageApportNutriment(new BigDecimal(val));
+                nourritureNutrimentRepository.save(nn);
+            }
+        }
+
         return "redirect:/nourritures";
     }
 
