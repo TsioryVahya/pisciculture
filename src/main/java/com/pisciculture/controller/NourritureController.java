@@ -58,10 +58,24 @@ public class NourritureController {
     @PostMapping("/save")
     @Transactional
     public String save(@ModelAttribute Nourriture nourriture, @RequestParam Map<String, String> allParams) {
+        // Si c'est une mise à jour, on récupère l'objet existant pour préserver sa collection
+        if (nourriture.getId() != null) {
+            Nourriture existing = nourritureRepository.findById(nourriture.getId()).orElse(null);
+            if (existing != null) {
+                existing.setNom(nourriture.getNom());
+                existing.setPrixAchatParKg(nourriture.getPrixAchatParKg());
+                nourriture = existing;
+            }
+        }
+        
         Nourriture savedNourriture = nourritureRepository.save(nourriture);
 
         // Gestion des nutriments modulables
         nourritureNutrimentRepository.deleteByNourriture(savedNourriture);
+        if (savedNourriture.getNutriments() != null) {
+            savedNourriture.getNutriments().clear();
+        }
+        
         List<Nutriment> allNutriments = nutrimentRepository.findAll();
         for (Nutriment n : allNutriments) {
             String val = allParams.get("nutriment_" + n.getId());

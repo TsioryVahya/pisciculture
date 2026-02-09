@@ -53,15 +53,24 @@ public class RaceController {
     @Transactional
     public String save(@ModelAttribute Race race, @RequestParam Map<String, String> allParams) {
         boolean isNew = race.getId() == null;
-        Race oldRace = null;
+        Race existingRace = null;
         if (!isNew) {
-            oldRace = raceRepository.findById(race.getId()).orElse(null);
+            existingRace = raceRepository.findById(race.getId()).orElse(null);
+            if (existingRace != null) {
+                // On met à jour l'objet existant pour ne pas perdre la collection gérée par Hibernate
+                existingRace.setNom(race.getNom());
+                existingRace.setPrixAchatParKg(race.getPrixAchatParKg());
+                existingRace.setPrixVenteParKg(race.getPrixVenteParKg());
+                existingRace.setPoidsMax(race.getPoidsMax());
+                existingRace.setCapaciteAugmentationPoids(race.getCapaciteAugmentationPoids());
+                race = existingRace;
+            }
         }
 
         Race savedRace = raceRepository.save(race);
 
         // Historisation du prix d'achat
-        if (isNew || (oldRace != null && oldRace.getPrixAchatParKg().compareTo(race.getPrixAchatParKg()) != 0)) {
+        if (isNew || (existingRace != null && existingRace.getPrixAchatParKg().compareTo(race.getPrixAchatParKg()) != 0)) {
             TypePrix typeAchat = typePrixRepository.findByNom("achat")
                     .orElseGet(() -> {
                         TypePrix tp = new TypePrix();
@@ -76,7 +85,7 @@ public class RaceController {
         }
 
         // Historisation du prix de vente
-        if (isNew || (oldRace != null && oldRace.getPrixVenteParKg().compareTo(race.getPrixVenteParKg()) != 0)) {
+        if (isNew || (existingRace != null && existingRace.getPrixVenteParKg().compareTo(race.getPrixVenteParKg()) != 0)) {
             TypePrix typeVente = typePrixRepository.findByNom("vente")
                     .orElseGet(() -> {
                         TypePrix tp = new TypePrix();
@@ -92,6 +101,10 @@ public class RaceController {
 
         // Gestion des nutriments modulables
         raceNutrimentRepository.deleteByRace(savedRace);
+        if (savedRace.getNutriments() != null) {
+            savedRace.getNutriments().clear();
+        }
+        
         List<Nutriment> allNutriments = nutrimentRepository.findAll();
         for (Nutriment n : allNutriments) {
             String val = allParams.get("nutriment_" + n.getId());
